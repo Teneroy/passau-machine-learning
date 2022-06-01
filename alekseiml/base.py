@@ -47,3 +47,7 @@ class Classifier(BaseModel, metaclass=ABCMeta):
 
 class Regression(BaseModel, metaclass=ABCMeta):
     pass
+
+
+class Clusterisation(BaseModel, metaclass=ABCMeta):
+    pass
