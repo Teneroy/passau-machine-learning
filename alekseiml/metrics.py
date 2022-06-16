@@ -1,4 +1,4 @@
-from numpy import np
+import numpy as np
 
 
 def r2_score(y, y_pred):
@@ -46,3 +46,7 @@ def euclidean_distance(A, B):
     C = -2 * AB + B_square + A_square
 
     return np.sqrt(C)
+
+
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))

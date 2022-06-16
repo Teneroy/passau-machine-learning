@@ -1,10 +1,11 @@
+from base import Classifier
 from abc import ABC
 import re
 import codecs
 import os
-from base import Classifier, BaseModel
 import numpy as np
 import math
+from metrics import sigmoid
 
 
 class RandomClassifier(Classifier):
@@ -127,3 +128,41 @@ class NaiveBayesClassifier(Classifier):
 
     def _tokenize_str(self, doc):
         return re.findall(r'\b\w\w+\b', doc)  # return all words with #characters > 1
+
+
+class LogisticRegression(Classifier):
+    def __init__(self) -> None:
+        self.w = None
+
+    def _add_constant(self, features: np.ndarray) -> np.ndarray:
+        return np.hstack((features, np.ones((len(features), 1))))
+
+    def learn(
+            self,
+            features: np.ndarray,
+            targets: np.ndarray,
+            learning_rate: float = 1e-3,
+            n_epochs: int = 500,
+            random_state: int = 42,
+    ) -> None:
+        # self._check_learn_shapes(features, targets)
+        # features = self._add_constant(features)
+
+        rng = np.random.default_rng(random_state)
+        self.w = rng.standard_normal(size=(features.shape[1] + 1,))
+
+        for epoch in range(n_epochs):
+            self.w = self.w - learning_rate * self._gradient(features, targets)
+            if np.isnan(self.w).sum() > 0:
+                raise ValueError("Weights have diverged", self.w)
+
+    def _gradient(self, features: np.ndarray, targets: np.ndarray):
+        return sum([(y_hat - y) * x for y_hat, y, x in zip(self.infer(features), targets, self._add_constant(features))])
+
+    def infer(self, features: np.ndarray) -> np.ndarray:
+        # self._check_infer_shapes(features)
+        features = self._add_constant(features)
+        y_pred = []
+        for x in features:
+            y_pred.append(sigmoid(self.w.T @ x))
+        return np.array(y_pred)
