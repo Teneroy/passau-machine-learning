@@ -6,6 +6,7 @@ import os
 import numpy as np
 import math
 from metrics import sigmoid
+from random import shuffle
 
 
 class RandomClassifier(Classifier):
@@ -46,7 +47,7 @@ class TrivialClassifier(Classifier):
 
 
 class NaiveBayesClassifier(Classifier):
-    def __int__(self, min_count=1):
+    def __init__(self, min_count=1) -> None:
         self.min_count = min_count
         self.vocabulary = {}
         self.num_docs = 0
@@ -79,7 +80,33 @@ class NaiveBayesClassifier(Classifier):
                             self.classes[class_name]["terms"][term] += 1
         self.vocabulary = {k: v for k, v in self.vocabulary.items() if v > self.min_count}
 
-    def learn(self, path, targets=None):
+    def _build_vocab_by_arrays(self, features, targets):
+        i = 0
+        for feature in features:
+            class_name = targets[i]
+            if self.classes.get(class_name) is None:
+                self.classes[class_name] = {"doc_counts": 0, "term_counts": 0, "terms": {}}
+
+            self.num_docs += 1
+            self.classes[class_name]["doc_counts"] += 1
+
+            terms = feature.indices
+            occurrence = feature.data
+
+            for j in range(len(terms)):
+                term = terms[j]
+                self.classes[class_name]["term_counts"] += 1
+                self.vocabulary[term] = term
+                if self.classes[class_name]["terms"].get(term) is None:
+                    self.classes[class_name]["terms"][term] = occurrence[j]
+                    continue
+                self.classes[class_name]["terms"][term] = (self.classes[class_name]["terms"][term] + occurrence[j])
+
+            i += 1
+
+        self.vocabulary = {k: v for k, v in self.vocabulary.items() if v > self.min_count}
+
+    def learn(self, path:str, targets=None):
         self._build_vocab(path)
 
         for cn in self.classes:
@@ -93,6 +120,33 @@ class NaiveBayesClassifier(Classifier):
                 t_ct = 1.
                 t_ct += cdict[term] if term in cdict else 0.
                 self.conditionals[cn][term] = math.log(t_ct) - math.log(c_len + len(self.vocabulary))
+
+    def learn_by_array(self, features: np.array, targets: np.array):
+        self._build_vocab_by_arrays(features, targets)
+        for cn in self.classes:
+            self.priors[cn] = math.log(self.classes[cn]['doc_counts']) - math.log(self.num_docs)
+
+            self.conditionals[cn] = {}
+            cdict = self.classes[cn]['terms']
+            c_len = sum(cdict.values())
+
+            for term in self.vocabulary:
+                t_ct = 1.
+                t_ct += cdict[term] if term in cdict else 0.
+                self.conditionals[cn][term] = math.log(t_ct) - math.log(c_len + len(self.vocabulary))
+
+    def test_by_array(self, features: np.array, targets: np.array):
+        pred = []
+        truth = []
+
+        i = 0
+        for feature in features:
+            _, result_class = self._predict(feature.indices)
+            pred.append(result_class)
+            truth.append(targets[i])
+            i += 1
+
+        return truth, pred
 
     def test(self, path):
         pred = []
@@ -166,3 +220,135 @@ class LogisticRegression(Classifier):
         for x in features:
             y_pred.append(sigmoid(self.w.T @ x))
         return np.array(y_pred)
+
+
+
+class SVM():
+    """Implementation of SVM with SGD"""
+
+    def __init__(self, lmbd, D):
+        self.lmbd = lmbd
+        self.D = D + 1
+        self.w = [0.] * self.D
+
+    def sign(self, x):
+        return -1. if x <= 0 else 1.
+
+    def hinge_loss(self, target, y):
+        return max(0, 1 - target * y)
+
+    def data(self, test=False):
+        if test:
+            with open('test.csv', 'r') as f:
+                samples = f.readlines()
+
+                for t, row in enumerate(samples):
+
+                    row = row.replace('\n', '')
+                    row = row.split(',')
+
+                    target = -1.
+
+                    if row[3] == '1':
+                        target = 1.
+                    del row[3]
+
+                    x = [float(c) for c in row] + [1.]  # inputs + bias
+
+                    yield t, x, target
+
+        else:
+
+            with open('train.csv', 'r') as f:
+                samples = f.readlines()
+                shuffle(samples)
+
+                for t, row in enumerate(samples):
+
+                    row = row.replace('\n', '')
+                    row = row.split(',')
+
+                    target = -1.
+
+                    if row[3] == '1':
+                        target = 1.
+                    del row[3]
+
+                    x = [float(c) for c in row] + [1.]  # inputs + bias
+
+                    yield t, x, target
+
+    def train(self, x, y, alpha):
+        if y * self.predict(x) < 1:
+
+            for i in range(len(x)):
+                self.w[i] = self.w[i] + alpha * ((y * x[i]) + (-2 * (self.lmbd) * self.w[i]))
+
+        else:
+            for i in range(len(x)):
+                self.w[i] = self.w[i] + alpha * (-2 * (self.lmbd) * self.w[i])
+
+        return self.w
+
+    def predict(self, x):
+        wTx = 0.
+        sigma = 4.55
+        y = 1.0 / ((2.0 * sigma) ** 2)
+
+        for i in range(len(x)):
+            wTx += (self.w[i] - x[i]) ** 2
+
+        return np.exp(-1*y*wTx)
+
+    def fit(self):
+        test_count = 0.
+
+        tn = 0.
+        tp = 0.
+
+        total_positive = 0.
+        total_negative = 0.
+
+        accuracy = 0.
+        loss = 0.
+
+        last = 0
+        d = self.data(test=False)
+        i = 0
+
+
+        for t, x, target in d:
+            i+=1
+            # print(i)
+            if target == last:
+                continue
+            # 196129
+            alpha = 1. / (self.lmbd * (t + 1.))
+            w = self.train(x, target, alpha)
+            last = target
+
+        for t, x, target in self.data(test=True):
+
+            pred = self.predict(x)
+            loss += self.hinge_loss(target, pred)
+
+            pred = self.sign(pred)
+
+            if target == 1:
+                total_positive += 1.
+            else:
+                total_negative += 1.
+
+            if pred == target:
+                accuracy += 1.
+                if pred == 1:
+                    tp += 1.
+                else:
+                    tn += 1.
+
+        loss = loss / (total_positive + total_negative)
+        acc = accuracy / (total_positive + total_negative)
+
+        # print 'Loss', loss, '\nTrue Negatives', tn/total_negative * 100, '%', '\nTrue Positives', tp/total_positive * 100, '%','\nPrecision', accuracy/(total_positive+total_negative) * 100, '%', '\n'
+
+        return loss, acc, tp / total_positive, tn / total_negative, w
