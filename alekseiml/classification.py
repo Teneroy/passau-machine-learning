@@ -222,7 +222,6 @@ class LogisticRegression(Classifier):
         return np.array(y_pred)
 
 
-
 class SVM():
     """Implementation of SVM with SGD"""
 
@@ -251,7 +250,7 @@ class SVM():
 
                     if row[3] == '1':
                         target = 1.
-                    del row[3]
+                    row = row[:3]
 
                     x = [float(c) for c in row] + [1.]  # inputs + bias
 
@@ -272,7 +271,7 @@ class SVM():
 
                     if row[3] == '1':
                         target = 1.
-                    del row[3]
+                    row = row[:3]
 
                     x = [float(c) for c in row] + [1.]  # inputs + bias
 
@@ -292,13 +291,55 @@ class SVM():
 
     def predict(self, x):
         wTx = 0.
-        sigma = 4.55
-        y = 1.0 / ((2.0 * sigma) ** 2)
-
         for i in range(len(x)):
-            wTx += (self.w[i] - x[i]) ** 2
+            wTx += self.w[i] * x[i]
 
-        return np.exp(-1*y*wTx)
+        return wTx
+
+    def learn(self, features, targets):
+        tn = 0.
+        tp = 0.
+        total_positive = 0.
+        total_negative = 0.
+        accuracy = 0.
+        loss = 0.
+        last = 0
+        t = 0
+        for x, target in zip(features, targets):
+            x = [float(c) for c in x] + [1.]
+            if target == last:
+                continue
+
+            alpha = 1. / (self.lmbd * (t + 1.))
+            w = self.train(x, target, alpha)
+            last = target
+            t += 1
+
+        for x, target in zip(features, targets):
+            x = [float(c) for c in x] + [1.]
+            pred = self.predict(x)
+            loss += self.hinge_loss(target, pred)
+
+            pred = self.sign(pred)
+
+            if target == 1:
+                total_positive += 1.
+            else:
+                total_negative += 1.
+
+            if pred == target:
+                accuracy += 1.
+                if pred == 1:
+                    tp += 1.
+                else:
+                    tn += 1.
+
+        loss = loss / (total_positive + total_negative)
+        acc = accuracy / (total_positive + total_negative)
+
+        return loss, acc, tp / total_positive, tn / total_negative, w
+
+
 
     def fit(self):
         test_count = 0.
@@ -313,16 +354,12 @@ class SVM():
         loss = 0.
 
         last = 0
-        d = self.data(test=False)
-        i = 0
+        w = 0
+        for t, x, target in self.data(test=False):
 
-
-        for t, x, target in d:
-            i+=1
-            # print(i)
             if target == last:
                 continue
-            # 196129
+
             alpha = 1. / (self.lmbd * (t + 1.))
             w = self.train(x, target, alpha)
             last = target
