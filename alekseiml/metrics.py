@@ -1,6 +1,35 @@
 import numpy as np
 
 
+def accuracy(y_pred, y_true) -> float:
+    sum = 0
+    for i in range(len(y_pred)):
+        if y_pred[i] == y_true[i]:
+            sum += 1
+    return sum / len(y_true)
+
+
+def compute_cost(Y, Y_hat):
+    """
+    This function computes and returns the Cost and its derivative.
+    The is function uses the Squared Error Cost function -> (1/2m)*sum(Y - Y_hat)^.2
+    Args:
+        Y: labels of data
+        Y_hat: Predictions(activations) from a last layer, the output layer
+    Returns:
+        cost: The Squared Error Cost result
+        dY_hat: gradient of Cost w.r.t the Y_hat
+    """
+    m = Y.shape[0]
+
+    cost = (1 / (2 * m)) * np.sum(np.square(Y - Y_hat))  # (y-y_)^2
+    cost = np.squeeze(cost)  # remove extraneous dimensions to give just a scalar
+
+    dY_hat = -1 / m * (Y - Y_hat)  # derivative of the squared error cost function
+
+    return cost, dY_hat
+
+
 def r2_score(y, y_pred):
     return 1 - np.mean((y - y_pred) ** 2) / y.var()
 
