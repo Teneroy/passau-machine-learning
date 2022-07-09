@@ -22,37 +22,18 @@ train = train.sample(frac=1)
 train_X = train.values[:, 0:3]
 train_y = [prepare_target(record) for record in train.values[:, 3:4]]
 
-loss_list = []
-acc_list = []
-tp_list = []
-tn_list = []
-w_list = []
+test_X = test.values[:, 0:3]
+test_y = [prepare_target(record) for record in test.values[:, 3:4]]
 
 svm = SVM(1, 3)
 svm2 = SVM(1, 3)
 
 
+np.random.seed(0)
 
+l, acc, tp, tn, w = svm.fit()
+print("l: ", l, ", acc: ", acc, ", tp: ", tp, ", tn: ", tn)
 
-for i in range(100):
-    # print '\nSeed',i
-    print(i)
-
-    np.random.seed(i)
-
-    l, acc, tp, tn, w = svm.fit()
-    print("l: ", l, ", acc: ", acc, ", tp: ", tp, ", tn: ", tn)
-
-    l, acc, tp, tn, w = svm2.learn(train_X, train_y)
-    print("l: ", l, ", acc: ", acc, ", tp: ", tp, ", tn: ", tn)
-
-    loss_list.append(l)
-    acc_list.append(acc)
-    tp_list.append(tp)
-    tn_list.append(tn)
-    w_list.append(w)
-
-print('Loss', sum(loss_list) / len(loss_list))
-print('Accuracy', sum(acc_list) / len(acc_list) * 100, '%')
-print('True Positives', sum(tp_list) / len(tp_list) * 100, '%')
-print('True Negatives', sum(tn_list) / len(tn_list) * 100, '%')
+svm2.learn(train_X, train_y)
+l, acc, tp, tn, w = svm2.test(test_X, test_y)
+print("l: ", l, ", acc: ", acc, ", tp: ", tp, ", tn: ", tn)

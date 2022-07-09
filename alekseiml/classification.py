@@ -297,23 +297,26 @@ class SVM():
         return wTx
 
     def learn(self, features, targets):
+        last = 0
+        t = 0
+        for i in range(100):
+            for x, target in zip(features, targets):
+                x = [float(c) for c in x] + [1.]
+                if target == last:
+                    continue
+
+                alpha = 1. / (self.lmbd * (t + 1.))
+                w = self.train(x, target, alpha)
+                last = target
+                t += 1
+
+    def test(self, features, targets):
         tn = 0.
         tp = 0.
         total_positive = 0.
         total_negative = 0.
         accuracy = 0.
         loss = 0.
-        last = 0
-        t = 0
-        for x, target in zip(features, targets):
-            x = [float(c) for c in x] + [1.]
-            if target == last:
-                continue
-
-            alpha = 1. / (self.lmbd * (t + 1.))
-            w = self.train(x, target, alpha)
-            last = target
-            t += 1
 
         for x, target in zip(features, targets):
             x = [float(c) for c in x] + [1.]
@@ -337,9 +340,7 @@ class SVM():
         loss = loss / (total_positive + total_negative)
         acc = accuracy / (total_positive + total_negative)
 
-        return loss, acc, tp / total_positive, tn / total_negative, w
-
-
+        return loss, acc, tp / total_positive, tn / total_negative, self.w
 
     def fit(self):
         test_count = 0.
