@@ -179,17 +179,12 @@ class DecisionTreeID3(object):
 
         return [_predict(x, self.root) for x in X]
 
-    def print_tree(self, ai2an_map=None, ai2aiv2aivn_map=None):
+    def print_tree(self, ai2an_map, ai2aiv2aivn_map):
         """
         ai2an_map: list of attribute names
         ai2aiv2aivn_map: list of lists of attribute values,
                          i.e. a value, encoded as integer 2, of attribute with index 3 has name ai2aiv2aivn_map[3][2]
         """
-
-        if ai2aiv2aivn_map is None:
-            ai2aiv2aivn_map = []
-        if ai2an_map is None:
-            ai2an_map = []
 
         def _print(node, test="", level=0):
             """

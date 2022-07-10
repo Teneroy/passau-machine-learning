@@ -1,12 +1,14 @@
 import numpy as np
 
 
-def accuracy(y_pred, y_true) -> float:
-    sum = 0
-    for i in range(len(y_pred)):
-        if y_pred[i] == y_true[i]:
-            sum += 1
-    return sum / len(y_true)
+def acc(y, y_p):
+    correct = y == y_p
+    acc = np.sum(correct) / float(len(y))
+    return acc
+
+
+def err_mis(y, y_p):
+    return 1. - acc(y, y_p)
 
 
 def compute_cost(Y, Y_hat):
