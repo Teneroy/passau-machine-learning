@@ -31,13 +31,13 @@ X, y = dataset[:, :6], dataset[:, 6]
 print(X.shape, y.shape)
 
 tree = DecisionTreeID3()
-tree.fit(X, y, verbose=0)
+tree.learn(X, y, verbose=0)
 tree.print_tree(ai2an_map, ai2aiv2aivn_map)
 
 
 print ("According to the attributes %s"%(col_names[:-1]))
 print ("Should i buy the car %s?"%(dataset[52,0:6]))
-print ("The car is %s (in truth it is %s)"%(tree.predict(dataset[[52],0:6]),dataset[52,6]))
+print ("The car is %s (in truth it is %s)"%(tree.infer(dataset[[52],0:6]),dataset[52,6]))
 
 
 impurity_measures = [_gini, _entropy, _misclass]
@@ -58,11 +58,12 @@ for imp in impurity_measures:
         _y_te = y[idx_te]
 
         DecisionTreeID3(criterion=imp)
-        tree.fit(_X_tr, _y_tr, verbose=0)
+        tree.learn(_X_tr, _y_tr, verbose=0)
 
-        y_tr_p = tree.predict(_X_tr)
-        y_te_p = tree.predict(_X_te)
+        y_tr_p = tree.infer(_X_tr)
+        y_te_p = tree.infer(_X_te)
         err_tr += err_mis(_y_tr, y_tr_p)
         err_te += err_mis(_y_te, y_te_p)
+        print(acc(_y_te, y_te_p))
 
     print("%s: Average training error %f;Average test error %f" % (imp, err_tr / k, err_te / k))

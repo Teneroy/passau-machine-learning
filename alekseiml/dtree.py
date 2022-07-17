@@ -1,7 +1,8 @@
 import numpy as np
+from base import Classifier
 
 
-def pp_float_list(ps):#pretty print functionality
+def pp_float_list(ps):  # pretty print functionality
     return ["%2.3f" % p for p in ps]
 
 
@@ -114,7 +115,7 @@ class DecisionNode(object):
         DecisionNode.NODEID += 1
 
 
-class DecisionTreeID3(object):
+class DecisionTreeID3(Classifier):
     def __init__(self, criterion=_entropy):
         """
         :param criterion: The function to assess the quality of a split
@@ -122,9 +123,10 @@ class DecisionTreeID3(object):
         self.criterion = criterion
         self.root = None
 
-    def fit(self, X, y, verbose=0):
+    def learn(self, X, y, verbose=0):
+        self._check_learn_shapes(X, y)
 
-        def _fit(X, y, attributes=None):
+        def _learn(X, y, attributes=None):
 
             # Set up temporary variables
             N, d = X.shape
@@ -160,24 +162,26 @@ class DecisionTreeID3(object):
                     branches[v] = DecisionNode(label=label)
                 else:
                     if verbose: print("Level %d: Recursion for value %s of attribute %d" % (depth, v, a_i))
-                    branches[v] = _fit(X[split, :], y[split], attributes=attributes)
+                    branches[v] = _learn(X[split, :], y[split], attributes=attributes)
 
             attributes[a_i] = values
             return DecisionNode(attr=a_i, children=branches, label=label)
 
-        self.root = _fit(X, y)
+        self.root = _learn(X, y)
         return self
 
-    def predict(self, X):
-        def _predict(x, node):
+    def infer(self, X):
+        self._check_infer_shapes(X)
+
+        def _infer(x, node):
             if not node.children:
                 return node.label
             else:
                 v = x[node.attr]
                 child_node = node.children[v]
-                return _predict(x, child_node)
+                return _infer(x, child_node)
 
-        return [_predict(x, self.root) for x in X]
+        return [_infer(x, self.root) for x in X]
 
     def print_tree(self, ai2an_map, ai2aiv2aivn_map):
         """
