@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sklearn.linear_model
 
-from alekseiml.regressions import LinearRegressionLMS, LinearRegressorGD, RandomNormalEstimator, RandomUniformEstimator, LinearRegressorGD2
+from alekseiml.regressions import LinearRegressionLMS, LinearRegressorGD, RandomNormalEstimator, RandomUniformEstimator
 import pandas as pd
 from sklearn import metrics as skmt
 from sklearn import datasets as dts
@@ -67,15 +67,15 @@ def predict_age_by_credit_car_dept(path):
     X /= np.linalg.norm(X)
     y /= np.linalg.norm(y)
     plt.plot(X, y, 'o')
-    gd = LinearRegressionLMS()
-    # gd = LinearRegressorGD()
+    # gd = LinearRegressionLMS()
+    gd = LinearRegressorGD()
     sk_gd = sklearn.linear_model.LinearRegression()
     # X, y, true_coefs = dts.make_regression(n_samples=100, n_features=2, n_informative=3, random_state=0,
     #                                                     coef=True, noise=10)
     # X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, random_state=0, train_size=0.7)
 
-    # gd.learn(X, y, n_epochs=1000000)
-    gd.learn(X, y)
+    gd.learn(X, y, n_epochs=1000000)
+    # gd.learn(X, y)
     sk_gd.fit(X, y)
     pred_gd = gd.infer(X)
 

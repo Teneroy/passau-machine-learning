@@ -1,4 +1,4 @@
-from base import Regression, BaseModel
+from base import Regression
 import numpy as np
 
 
@@ -38,12 +38,12 @@ class LinearRegressionLMS(Regression):
         return np.hstack((features, np.ones((len(features), 1))))
 
     def learn(self, features: np.ndarray, targets: np.ndarray) -> None:
-        # self._check_learn_shapes(features, targets)
+        self._check_learn_shapes(features, targets)
         features = self._add_constant(features)
         self.w = np.linalg.inv(features.T @ features) @ features.T @ targets  # there is also np.linalg.pinv
 
     def infer(self, features: np.ndarray) -> np.ndarray:
-        # self._check_infer_shapes(features)
+        self._check_infer_shapes(features)
         features = self._add_constant(features)
         return features @ self.w
 
@@ -63,7 +63,7 @@ class LinearRegressorGD(Regression):
             n_epochs: int = 500,
             random_state: int = 42,
     ) -> None:
-        # self._check_learn_shapes(features, targets)
+        self._check_learn_shapes(features, targets)
         features = self._add_constant(features)
 
         rng = np.random.default_rng(random_state)
@@ -78,6 +78,6 @@ class LinearRegressorGD(Regression):
         return features.T @ features @ self.w - features.T @ targets
 
     def infer(self, features: np.ndarray) -> np.ndarray:
-        # self._check_infer_shapes(features)
+        self._check_infer_shapes(features)
         features = self._add_constant(features)
         return features @ self.w
