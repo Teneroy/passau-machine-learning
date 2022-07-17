@@ -39,13 +39,19 @@ class BaseModel:
 
 class Classifier(BaseModel, metaclass=ABCMeta):
     def _check_feature_shapes(self, features: np.array):
-        pass
+        assert features is not None
+        assert len(features.shape) == 2
+        assert features.shape[0] > 0
+        assert features.shape[1] > 0
 
     def _check_learn_shapes(self, features: np.array, targets: np.array):
-        pass
+        self._check_feature_shapes(features)
+        assert targets is not None
+        assert len(targets.shape) == 1
+        assert targets.shape[0] == features.shape[0]
 
     def _check_infer_shapes(self, features: np.array):
-        pass
+        self._check_feature_shapes(features)
 
 
 class Regression(BaseModel, metaclass=ABCMeta):

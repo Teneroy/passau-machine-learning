@@ -34,5 +34,5 @@ def test_sklearn_nb_by_filepath(train_path, test_path):
     print('Accuracy for self-implemented NB:    %2.2f %%' % (100. * mt.accuracy_score(test_y, pred_y)))
 
 
-test_nb_by_filepath('data/newsgroups/20news-bydate-train', 'data/newsgroups/20news-bydate-test')
+# test_nb_by_filepath('data/newsgroups/20news-bydate-train', 'data/newsgroups/20news-bydate-test')
 test_sklearn_nb_by_filepath('data/newsgroups/20news-bydate-train', 'data/newsgroups/20news-bydate-test')

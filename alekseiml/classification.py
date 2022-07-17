@@ -122,6 +122,7 @@ class NaiveBayesClassifier(Classifier):
                 self.conditionals[cn][term] = math.log(t_ct) - math.log(c_len + len(self.vocabulary))
 
     def learn_by_array(self, features: np.array, targets: np.array):
+        self._check_learn_shapes(features, targets)
         self._build_vocab_by_arrays(features, targets)
         for cn in self.classes:
             self.priors[cn] = math.log(self.classes[cn]['doc_counts']) - math.log(self.num_docs)
@@ -136,6 +137,7 @@ class NaiveBayesClassifier(Classifier):
                 self.conditionals[cn][term] = math.log(t_ct) - math.log(c_len + len(self.vocabulary))
 
     def test_by_array(self, features: np.array, targets: np.array):
+        self._check_learn_shapes(features, targets)
         pred = []
         truth = []
 
@@ -163,7 +165,7 @@ class NaiveBayesClassifier(Classifier):
 
     def infer(self, document):
         token_list = self._tokenize_str(document)
-        self._predict(token_list)
+        return self._predict(token_list)
 
     def _predict(self, token_list):
         scores = {}
@@ -199,7 +201,7 @@ class LogisticRegression(Classifier):
             n_epochs: int = 500,
             random_state: int = 42,
     ) -> None:
-        # self._check_learn_shapes(features, targets)
+        self._check_learn_shapes(features, targets)
         # features = self._add_constant(features)
 
         rng = np.random.default_rng(random_state)
@@ -214,7 +216,7 @@ class LogisticRegression(Classifier):
         return sum([(y_hat - y) * x for y_hat, y, x in zip(self.infer(features), targets, self._add_constant(features))])
 
     def infer(self, features: np.ndarray) -> np.ndarray:
-        # self._check_infer_shapes(features)
+        self._check_infer_shapes(features)
         features = self._add_constant(features)
         y_pred = []
         for x in features:
@@ -222,7 +224,7 @@ class LogisticRegression(Classifier):
         return np.array(y_pred)
 
 
-class SVM():
+class SVM(Classifier):
     """Implementation of SVM with SGD"""
 
     def __init__(self, lmbd, D):
@@ -235,47 +237,6 @@ class SVM():
 
     def hinge_loss(self, target, y):
         return max(0, 1 - target * y)
-
-    def data(self, test=False):
-        if test:
-            with open('test.csv', 'r') as f:
-                samples = f.readlines()
-
-                for t, row in enumerate(samples):
-
-                    row = row.replace('\n', '')
-                    row = row.split(',')
-
-                    target = -1.
-
-                    if row[3] == '1':
-                        target = 1.
-                    row = row[:3]
-
-                    x = [float(c) for c in row] + [1.]  # inputs + bias
-
-                    yield t, x, target
-
-        else:
-
-            with open('train.csv', 'r') as f:
-                samples = f.readlines()
-                shuffle(samples)
-
-                for t, row in enumerate(samples):
-
-                    row = row.replace('\n', '')
-                    row = row.split(',')
-
-                    target = -1.
-
-                    if row[3] == '1':
-                        target = 1.
-                    row = row[:3]
-
-                    x = [float(c) for c in row] + [1.]  # inputs + bias
-
-                    yield t, x, target
 
     def train(self, x, y, alpha):
         if y * self.predict(x) < 1:
@@ -296,10 +257,11 @@ class SVM():
 
         return wTx
 
-    def learn(self, features, targets):
+    def learn(self, features, targets, n_epochs=100):
+        self._check_learn_shapes(features, targets)
         last = 0
         t = 0
-        for i in range(100):
+        for i in range(n_epochs):
             for x, target in zip(features, targets):
                 x = [float(c) for c in x] + [1.]
                 if target == last:
@@ -310,7 +272,18 @@ class SVM():
                 last = target
                 t += 1
 
+    def infer(self, features):
+        self._check_feature_shapes(features)
+        predictions = []
+        for x in features:
+            x = [float(c) for c in x] + [1.]
+            pred = self.predict(x)
+            pred = self.sign(pred)
+            predictions.append(pred)
+        return predictions
+
     def test(self, features, targets):
+        self._check_learn_shapes(features, targets)
         tn = 0.
         tp = 0.
         total_positive = 0.
@@ -341,52 +314,3 @@ class SVM():
         acc = accuracy / (total_positive + total_negative)
 
         return loss, acc, tp / total_positive, tn / total_negative, self.w
-
-    def fit(self):
-        test_count = 0.
-
-        tn = 0.
-        tp = 0.
-
-        total_positive = 0.
-        total_negative = 0.
-
-        accuracy = 0.
-        loss = 0.
-
-        last = 0
-        w = 0
-        for t, x, target in self.data(test=False):
-
-            if target == last:
-                continue
-
-            alpha = 1. / (self.lmbd * (t + 1.))
-            w = self.train(x, target, alpha)
-            last = target
-
-        for t, x, target in self.data(test=True):
-
-            pred = self.predict(x)
-            loss += self.hinge_loss(target, pred)
-
-            pred = self.sign(pred)
-
-            if target == 1:
-                total_positive += 1.
-            else:
-                total_negative += 1.
-
-            if pred == target:
-                accuracy += 1.
-                if pred == 1:
-                    tp += 1.
-                else:
-                    tn += 1.
-
-        loss = loss / (total_positive + total_negative)
-        acc = accuracy / (total_positive + total_negative)
-
-        # print 'Loss', loss, '\nTrue Negatives', tn/total_negative * 100, '%', '\nTrue Positives', tp/total_positive * 100, '%','\nPrecision', accuracy/(total_positive+total_negative) * 100, '%', '\n'
-
-        return loss, acc, tp / total_positive, tn / total_negative, w

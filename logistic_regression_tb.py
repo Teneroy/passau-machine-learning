@@ -27,7 +27,7 @@ def employee_dataset_test(path):
     X = np.ravel(data[['Department']].values)
     y = np.ravel(data[['Designation']].values)
     vectorizer = feature_extraction.text.CountVectorizer()
-    X = vectorizer.
+    # X = vectorizer.
 
     # vectorizer2 = feature_extraction.text.CountVectorizer()
     # y = vectorizer.fit_transform(y).toarray()
